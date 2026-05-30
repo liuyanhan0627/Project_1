@@ -1,0 +1,43 @@
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading model: meta-llama/Llama-3.1-8B-Instruct
+Model type: llama
+Loading weights:   0%|                                                                                                                                                                   | 0/291 [00:00<?, ?it/s]Loading weights:  78%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████▎                                 | 226/291 [00:00<00:00, 2215.06it/s]Loading weights: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 291/291 [00:00<00:00, 2551.24it/s]
+
+Building prefix cache for prefix_len=512
+Measuring one-token decoding baseline
+Measuring n=1: verification [1,1] and sequential 1x[1,1]
+Measuring n=2: verification [1,2] and sequential 2x[1,1]
+Measuring n=4: verification [1,4] and sequential 4x[1,1]
+Measuring n=8: verification [1,8] and sequential 8x[1,1]
+Measuring n=16: verification [1,16] and sequential 16x[1,1]
+Measuring n=32: verification [1,32] and sequential 32x[1,1]
+Measuring n=64: verification [1,64] and sequential 64x[1,1]
+Measuring n=128: verification [1,128] and sequential 128x[1,1]
+Measuring n=256: verification [1,256] and sequential 256x[1,1]
+
+Building prefix cache for prefix_len=2048
+Measuring one-token decoding baseline
+Measuring n=1: verification [1,1] and sequential 1x[1,1]
+Measuring n=2: verification [1,2] and sequential 2x[1,1]
+Measuring n=4: verification [1,4] and sequential 4x[1,1]
+Measuring n=8: verification [1,8] and sequential 8x[1,1]
+Measuring n=16: verification [1,16] and sequential 16x[1,1]
+Measuring n=32: verification [1,32] and sequential 32x[1,1]
+Measuring n=64: verification [1,64] and sequential 64x[1,1]
+Measuring n=128: verification [1,128] and sequential 128x[1,1]
+Measuring n=256: verification [1,256] and sequential 256x[1,1]
+
+Building prefix cache for prefix_len=4096
+Measuring one-token decoding baseline
+Measuring n=1: verification [1,1] and sequential 1x[1,1]
+Measuring n=2: verification [1,2] and sequential 2x[1,1]
+Measuring n=4: verification [1,4] and sequential 4x[1,1]
+Measuring n=8: verification [1,8] and sequential 8x[1,1]
+Measuring n=16: verification [1,16] and sequential 16x[1,1]
+Measuring n=32: verification [1,32] and sequential 32x[1,1]
+Measuring n=64: verification [1,64] and sequential 64x[1,1]
+Measuring n=128: verification [1,128] and sequential 128x[1,1]
+Measuring n=256: verification [1,256] and sequential 256x[1,1]
+
+Wrote results to results/llama3_1_8b_a100.csv
+Wrote figures to figures
