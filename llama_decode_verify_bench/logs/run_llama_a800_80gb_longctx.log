@@ -1,0 +1,61 @@
+nohup: ignoring input
+Loading model: meta-llama/Llama-3.1-8B-Instruct
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/291 [00:00<?, ?it/s]Loading weights: 100%|██████████| 291/291 [00:00<00:00, 7495.85it/s]
+
+Building prefix cache for prefix_len=4096
+Built prefix cache: seq_len=4096, prefill_time=0.76s
+Measuring one-token decoding baseline
+Measuring n=32: verification [1,32], sequential baseline estimated
+Measuring n=64: verification [1,64], sequential baseline estimated
+Measuring n=128: verification [1,128], sequential baseline estimated
+Measuring n=256: verification [1,256], sequential baseline estimated
+Measuring n=512: verification [1,512], sequential baseline estimated
+
+Building prefix cache for prefix_len=32768
+Built prefix cache: seq_len=32768, prefill_time=6.96s
+Measuring one-token decoding baseline
+Measuring n=32: verification [1,32], sequential baseline estimated
+Measuring n=64: verification [1,64], sequential baseline estimated
+Measuring n=128: verification [1,128], sequential baseline estimated
+Measuring n=256: verification [1,256], sequential baseline estimated
+Measuring n=512: verification [1,512], sequential baseline estimated
+
+Building prefix cache for prefix_len=65536
+Built prefix cache: seq_len=65536, prefill_time=22.59s
+Measuring one-token decoding baseline
+Measuring n=32: verification [1,32], sequential baseline estimated
+Measuring n=64: verification [1,64], sequential baseline estimated
+Measuring n=128: verification [1,128], sequential baseline estimated
+Measuring n=256: verification [1,256], sequential baseline estimated
+Measuring n=512: verification [1,512], sequential baseline estimated
+
+Building prefix cache for prefix_len=98304
+Built prefix cache: seq_len=98304, prefill_time=47.34s
+Measuring one-token decoding baseline
+Measuring n=32: verification [1,32], sequential baseline estimated
+Measuring n=64: verification [1,64], sequential baseline estimated
+Measuring n=128: verification [1,128], sequential baseline estimated
+Measuring n=256: verification [1,256], sequential baseline estimated
+Measuring n=512: verification [1,512], sequential baseline estimated
+
+Building prefix cache for prefix_len=120000
+Built prefix cache: seq_len=120000, prefill_time=68.82s
+Measuring one-token decoding baseline
+Measuring n=32: verification [1,32], sequential baseline estimated
+Measuring n=64: verification [1,64], sequential baseline estimated
+Measuring n=128: verification [1,128], sequential baseline estimated
+Measuring n=256: verification [1,256], sequential baseline estimated
+Measuring n=512: verification [1,512], sequential baseline estimated
+
+Building prefix cache for prefix_len=130000
+Built prefix cache: seq_len=130000, prefill_time=80.00s
+Measuring one-token decoding baseline
+Measuring n=32: verification [1,32], sequential baseline estimated
+Measuring n=64: verification [1,64], sequential baseline estimated
+Measuring n=128: verification [1,128], sequential baseline estimated
+Measuring n=256: verification [1,256], sequential baseline estimated
+Measuring n=512: verification [1,512], sequential baseline estimated
+
+Wrote results to results/llama3_1_8b_a800_80gb_longctx.csv
+Wrote figures to figures_longctx
