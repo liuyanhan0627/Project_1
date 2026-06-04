@@ -21,8 +21,10 @@ timed region.
 ## Files
 
 - `bench_decode_verify.py`: main benchmark script.
+- `bench_long_context_verify.py`: long-context benchmark script for prefixes up to 130k tokens.
 - `plot_results.py`: plots CSV results.
 - `run_llama8b_a100.sh`: recommended Llama-3.1-8B run command for A100.
+- `run_llama8b_a100_longctx.sh`: recommended long-context run command for A100.
 - `requirements.txt`: Python dependencies.
 
 ## Setup
@@ -42,6 +44,8 @@ hf auth whoami
 ```
 
 ## Run
+
+### Short/Medium Context
 
 From this directory:
 
@@ -79,6 +83,30 @@ The script defaults to `HF_ENDPOINT=https://hf-mirror.com` in `run_llama8b_a100.
 If the mirror does not see your newly granted permission immediately, try the
 official endpoint by running `HF_ENDPOINT=https://huggingface.co bash run_llama8b_a100.sh`.
 
+### Long Context
+
+For the 130k-token context experiment, run:
+
+```bash
+mkdir -p logs
+PYTHONUNBUFFERED=1 bash run_llama8b_a100_longctx.sh 2>&1 | tee logs/run_llama_a100_longctx.log
+```
+
+Default long-context settings:
+
+```text
+prefix_len = 4096, 32768, 65536, 98304, 120000, 130000
+n = 32, 64, 128, 256, 512
+prefill_chunk_size = 2048
+warmup = 5
+repeat = 20
+```
+
+The long-context script builds the prefix KV cache with chunked prefill and does
+not clone the full 130k-token KV cache for every timing trial. Its sequential
+decoding baseline is estimated as `n * T_decode_1`, which is recorded in the CSV
+as `decode_seq_mode = estimated_n_times_decode_1`.
+
 ## Output Metrics
 
 The CSV includes:
@@ -87,6 +115,14 @@ The CSV includes:
 - `verify_per_token_ms = T_verify_n / n`
 - `amortized_vs_one_decode = (T_verify_n / n) / T_decode_1`
 - `speedup_over_seq = T_decode_seq_n / T_verify_n`
+
+The long-context CSV also includes:
+
+- `prefill_time_s`
+- `cache_seq_len`
+- `peak_memory_allocated_gb`
+- `peak_memory_reserved_gb`
+- `decode_seq_mode`
 
 The key expected pattern is that `T_verify_n` grows with `n`, but much more
 slowly than `T_decode_seq_n`; therefore `T_verify_n / n` should be lower than
