@@ -3,8 +3,8 @@
 
 This variant is designed for very long prefixes, such as 130k tokens. It avoids
 cloning the full prefix KV cache for each timing trial. Instead, it builds the
-prefix cache once with chunked prefill, then times target-model forwards with
-`use_cache=False` so the measured calls do not append to the prefix cache.
+prefix cache once with chunked prefill, times target-model forwards, then crops
+the cache back to the prefix length outside the timed region.
 
 The sequential decoding baseline is estimated as `n * T_decode_1`. This keeps
 the experiment practical at 128k context while preserving the comparison to
@@ -159,14 +159,6 @@ def summarize_ms(times_ms: list[float]) -> dict[str, float]:
     }
 
 
-def cache_to_legacy(cache: Any) -> Any:
-    if cache is None:
-        return None
-    if hasattr(cache, "to_legacy_cache"):
-        return cache.to_legacy_cache()
-    return cache
-
-
 def get_cache_seq_len(cache: Any) -> int | None:
     if cache is None:
         return None
@@ -179,22 +171,59 @@ def get_cache_seq_len(cache: Any) -> int | None:
     return None
 
 
+def crop_cache(cache: Any, max_length: int) -> Any:
+    """Crop a cache back to max_length and return the current cache object.
+
+    DynamicCache supports in-place crop(). Legacy tuple caches need rebuilt tuple
+    views. Cropping is deliberately done outside the timed CUDA event region.
+    """
+    if cache is None:
+        return None
+    if hasattr(cache, "crop"):
+        cache.crop(max_length)
+        return cache
+    if isinstance(cache, tuple):
+        cropped_layers = []
+        for layer in cache:
+            if isinstance(layer, tuple):
+                cropped_tensors = []
+                for tensor in layer:
+                    if torch.is_tensor(tensor) and tensor.ndim >= 3:
+                        cropped_tensors.append(tensor[..., :max_length, :])
+                    else:
+                        cropped_tensors.append(tensor)
+                cropped_layers.append(tuple(cropped_tensors))
+            elif torch.is_tensor(layer) and layer.ndim >= 3:
+                cropped_layers.append(layer[..., :max_length, :])
+            else:
+                cropped_layers.append(layer)
+        return tuple(cropped_layers)
+    if isinstance(cache, list):
+        return [crop_cache(item, max_length) for item in cache]
+    raise TypeError(f"Unsupported cache type for cropping: {type(cache)!r}")
+
+
 def timed_cuda(
     run: Callable[[], Any],
     *,
     warmup: int,
     repeat: int,
     device: torch.device,
+    reset: Callable[[], None] | None = None,
 ) -> dict[str, float]:
     if device.type != "cuda":
         raise RuntimeError("CUDA timing is required for this benchmark.")
 
     for _ in range(warmup):
+        if reset is not None:
+            reset()
         synchronize(device)
         with torch.inference_mode():
             result = run()
         synchronize(device)
         del result
+        if reset is not None:
+            reset()
 
     gc.collect()
     synchronize(device)
@@ -204,6 +233,8 @@ def timed_cuda(
     times_ms: list[float] = []
 
     for _ in range(repeat):
+        if reset is not None:
+            reset()
         synchronize(device)
         with torch.inference_mode():
             start_event.record()
@@ -212,6 +243,8 @@ def timed_cuda(
         synchronize(device)
         times_ms.append(start_event.elapsed_time(end_event))
         del result
+        if reset is not None:
+            reset()
 
     return summarize_ms(times_ms)
 
@@ -279,7 +312,7 @@ def build_prefix_cache_chunked(
 
     end_event.record()
     synchronize(device)
-    return cache_to_legacy(past), start_event.elapsed_time(end_event) / 1000.0
+    return past, start_event.elapsed_time(end_event) / 1000.0
 
 
 def main() -> None:
@@ -400,29 +433,33 @@ def main() -> None:
                 f"prefill_time={prefill_time_s:.2f}s"
             )
 
+            cache_holder = {"cache": prefix_cache}
+
+            def reset_prefix_cache() -> None:
+                cache_holder["cache"] = crop_cache(cache_holder["cache"], prefix_len)
+                current_len = get_cache_seq_len(cache_holder["cache"])
+                if current_len != prefix_len:
+                    raise RuntimeError(
+                        f"Failed to reset prefix cache to {prefix_len}; got {current_len}."
+                    )
+
             one_token = candidate_pool[:, :1].contiguous()
 
             def run_decode_1() -> Any:
                 return model(
                     input_ids=one_token,
-                    past_key_values=prefix_cache,
-                    use_cache=False,
+                    past_key_values=cache_holder["cache"],
+                    use_cache=True,
                 )
 
             print("Measuring one-token decoding baseline")
-            before_len = get_cache_seq_len(prefix_cache)
             decode_1_stats = timed_cuda(
                 run_decode_1,
                 warmup=args.warmup,
                 repeat=args.repeat,
                 device=model_device,
+                reset=reset_prefix_cache,
             )
-            after_len = get_cache_seq_len(prefix_cache)
-            if before_len != after_len:
-                raise RuntimeError(
-                    "Prefix cache length changed during use_cache=False timing: "
-                    f"{before_len} -> {after_len}."
-                )
 
             t_decode_1 = decode_1_stats["median_ms"]
 
@@ -432,24 +469,18 @@ def main() -> None:
                 def run_verify() -> Any:
                     return model(
                         input_ids=verify_tokens,
-                        past_key_values=prefix_cache,
-                        use_cache=False,
+                        past_key_values=cache_holder["cache"],
+                        use_cache=True,
                     )
 
                 print(f"Measuring n={n}: verification [1,{n}], sequential baseline estimated")
-                before_len = get_cache_seq_len(prefix_cache)
                 verify_stats = timed_cuda(
                     run_verify,
                     warmup=args.warmup,
                     repeat=args.repeat,
                     device=model_device,
+                    reset=reset_prefix_cache,
                 )
-                after_len = get_cache_seq_len(prefix_cache)
-                if before_len != after_len:
-                    raise RuntimeError(
-                        "Prefix cache length changed during use_cache=False timing: "
-                        f"{before_len} -> {after_len}."
-                    )
 
                 t_verify = verify_stats["median_ms"]
                 t_seq_est = t_decode_1 * n

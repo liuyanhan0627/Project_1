@@ -103,9 +103,11 @@ repeat = 20
 ```
 
 The long-context script builds the prefix KV cache with chunked prefill and does
-not clone the full 130k-token KV cache for every timing trial. Its sequential
-decoding baseline is estimated as `n * T_decode_1`, which is recorded in the CSV
-as `decode_seq_mode = estimated_n_times_decode_1`.
+not clone the full 130k-token KV cache for every timing trial. It lets each
+timed forward temporarily extend the cache, then crops the cache back to the
+prefix length outside the timed region. Its sequential decoding baseline is
+estimated as `n * T_decode_1`, which is recorded in the CSV as
+`decode_seq_mode = estimated_n_times_decode_1`.
 
 ## Output Metrics
 

@@ -63,12 +63,12 @@ https://ghfast.top
 
 ## 3. Run the Experiment on the Server
 
-Run the benchmark and save logs:
+Run the benchmark with `nohup` and save logs:
 
 ```bash
 cd /root/autodl-tmp/Project_1/llama_decode_verify_bench
 mkdir -p logs
-PYTHONUNBUFFERED=1 bash run_llama8b_a100.sh 2>&1 | tee logs/run_llama_a100.log
+nohup env PYTHONUNBUFFERED=1 bash run_llama8b_a100.sh > logs/run_llama_a100.log 2>&1 &
 ```
 
 For the long-context experiment:
@@ -76,7 +76,21 @@ For the long-context experiment:
 ```bash
 cd /root/autodl-tmp/Project_1/llama_decode_verify_bench
 mkdir -p logs
-PYTHONUNBUFFERED=1 bash run_llama8b_a100_longctx.sh 2>&1 | tee logs/run_llama_a100_longctx.log
+nohup env PYTHONUNBUFFERED=1 bash run_llama8b_a100_longctx.sh > logs/run_llama_a100_longctx.log 2>&1 &
+```
+
+Monitor a `nohup` run:
+
+```bash
+tail -f logs/run_llama_a100_longctx.log
+ps aux | grep bench_long_context_verify.py
+watch -n 2 nvidia-smi
+```
+
+Stop a running benchmark if needed:
+
+```bash
+pkill -f bench_long_context_verify.py
 ```
 
 Expected generated files:
